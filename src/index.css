@@ -1,0 +1,378 @@
+/* ---------------------------------------------------
+   Root Theme Tokens
+--------------------------------------------------- */
+:root {
+  --font-primary: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-mono: 'Fira Mono', 'Roboto Mono', monospace;
+  --base-font-size: 16px;
+
+  /* Palette */
+  --color-bg: #f5f7fb;
+  --color-bg-darker: #e7eaf4;
+  --color-surface: #ffffff;
+  --color-surface-hover: #fbfbff;
+  --color-sidebar: #ffffff;
+  --color-primary: #485eed;
+  --color-primary-hover: #283d9d;
+  --color-text: #252b37;
+  --color-text-light: #616a78;
+  --color-border: #d9dce6;
+  --color-secondary: #dee3ef;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #eab308;
+
+  /* Elevation */
+  --radius: 10px;
+  --shadow-sm: 0 2px 6px rgba(48, 63, 104, 0.08);
+  --shadow-md: 0 4px 16px rgba(48, 63, 104, 0.12);
+  --shadow-lg: 0 5px 32px rgba(48, 63, 104, 0.18);
+}
+
+/* ---------------------------------------------------
+   Global Resets
+--------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-primary);
+  color: var(--color-text);
+  background: var(--color-bg);
+  margin: 0;
+  line-height: 1.7;
+  font-size: var(--base-font-size);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0 0 0.6em 0;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: 0.2s;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------
+   Layout Structure
+--------------------------------------------------- */
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: var(--color-sidebar);
+  border-right: 1px solid var(--color-border);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar h2 {
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.sidebar li a {
+  padding: 0.7rem 1rem;
+  background: transparent;
+  border-radius: var(--radius);
+  display: block;
+  font-weight: 500;
+  color: var(--color-text);
+  transition: 0.2s;
+}
+
+.sidebar li a:hover {
+  background: var(--color-surface-hover);
+}
+
+.sidebar li.active a {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+/* Main content region */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.content {
+  padding: 2.2rem 3rem;
+  overflow-y: auto;
+}
+
+/* ---------------------------------------------------
+   Admin Key Bar (top bar)
+--------------------------------------------------- */
+.admin-key-bar {
+  background: var(--color-surface);
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.admin-key-bar input {
+  width: 280px;
+}
+
+/* ---------------------------------------------------
+   Cards
+--------------------------------------------------- */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem 2.2rem;
+  margin-bottom: 2rem;
+  animation: fadeIn 0.25s ease;
+}
+
+/* ---------------------------------------------------
+   Tables
+--------------------------------------------------- */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+thead tr {
+  background: transparent;
+}
+
+thead th {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: var(--color-text-light);
+  text-align: left;
+  padding: 0.6rem 1rem;
+}
+
+tbody tr {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: 0.2s;
+}
+
+tbody tr:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+tbody td {
+  padding: 0.9rem 1rem;
+  border-top: 1px solid rgba(0,0,0,0);
+}
+
+tbody tr td:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+tbody tr td:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ---------------------------------------------------
+   Buttons
+--------------------------------------------------- */
+button {
+  padding: 0.6rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: 0.15s;
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+button:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+button.danger {
+  background: var(--color-error);
+}
+button.danger:hover {
+  background: #c53030;
+}
+
+/* ---------------------------------------------------
+   Forms
+--------------------------------------------------- */
+label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  display: block;
+  color: var(--color-text);
+}
+
+input, select, textarea {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: #fff;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.97rem;
+  transition: 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(52, 97, 255, 0.17);
+  outline: none;
+}
+
+/* Upload form grid */
+.upload-form {
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  background: var(--color-surface);
+  padding: 1.6rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Filters area */
+.filters {
+  margin-bottom: 2rem;
+  padding: 1.3rem 1.5rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.filter-row {
+  display: flex;
+  gap: 1rem;
+}
+
+/* ---------------------------------------------------
+   Alerts
+--------------------------------------------------- */
+.alert {
+  padding: 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.2rem;
+  font-size: 0.95rem;
+}
+.alert-success {
+  background: #e9fef6;
+  color: var(--color-success);
+}
+.alert-error {
+  background: #ffeeee;
+  color: var(--color-error);
+}
+
+/* ---------------------------------------------------
+   Position Grid (Preview Helper)
+--------------------------------------------------- */
+.position-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 90px);
+  grid-template-rows: repeat(3, 90px);
+  gap: 8px;
+  margin-top: 1rem;
+}
+.position-cell {
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.4rem;
+  box-shadow: var(--shadow-sm);
+  white-space: pre-line;
+}
+
+/* ---------------------------------------------------
+   Animations
+--------------------------------------------------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------------------------------------------
+   Responsive
+--------------------------------------------------- */
+@media (max-width: 850px) {
+  .app-shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 1rem;
+  }
+  .sidebar ul {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 580px) {
+  .filter-row {
+    flex-direction: column;
+  }
+  .admin-key-bar input {
+    width: 100%;
+  }
+}
+
+/* ---------------------------------------------------
+   Dark Mode
+--------------------------------------------------- */
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1f242e;
+    --color-sidebar: #1d212b;
+    --color-surface: #242b37;
+    --color-border: #343a45;
+    --color-text: #e7eaf3;
+    --color-text-light: #aab1c6;
+    --color-primary: #7787ff;
+    --color-primary-hover: #5464ff;
+  }
+  table tbody tr {
+    background: var(--color-surface);
+  }
+} */
