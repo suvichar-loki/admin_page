@@ -6,10 +6,12 @@ import {
   fetchLanguages,
   updateCategories,
   updateLanguages,
+  type Category,
 } from "../api";
 
 export function ConfigPage() {
-  const [categories, setCategories] = useState<string[]>([]);
+  // const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,13 +43,18 @@ export function ConfigPage() {
   const handleAddCategory = async () => {
     const val = newCategory.trim();
     if (!val) return;
-    if (categories.includes(val)) {
+
+    // 🔑 check by key
+    if (categories.some((c) => c.key === val)) {
       alert("Category already exists.");
       return;
     }
+
     try {
       setSaving(true);
-      const updated = [...categories, val];
+
+      const updated = [...categories, { key: val }];
+
       await updateCategories(updated);
       setCategories(updated);
       setNewCategory("");
@@ -57,6 +64,7 @@ export function ConfigPage() {
       setSaving(false);
     }
   };
+
 
   const handleAddLanguage = async () => {
     const val = newLanguage.trim();
@@ -88,8 +96,11 @@ export function ConfigPage() {
         <h2>Categories</h2>
         <ul>
           {categories.map((cat) => (
-            <li key={cat}>{cat}</li>
+            <li key={cat.key}>
+              {cat.labels?.en ?? cat.key}
+            </li>
           ))}
+
         </ul>
         <div className="config-add-row">
           <input

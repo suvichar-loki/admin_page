@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/ImagesPage.tsx
+
 import { useEffect, useState } from "react";
 import {
   fetchCategories,
@@ -8,12 +9,13 @@ import {
   deleteImage,
   uploadImage,
   type Image,
+  type Category,
 } from "../api";
 import { positionLabel } from "../position";
 import { PositionGuide } from "../components/PositionGuide";
 
 export function ImagesPage() {
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
   const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,10 @@ export function ImagesPage() {
   const [filterLanguage, setFilterLanguage] = useState("");
 
   // Upload form state
+  const [mediaType, setMediaType] = useState<"image" | "video">("image");
   const [file, setFile] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+
   const [formCategory, setFormCategory] = useState("");
   const [formLanguage, setFormLanguage] = useState("");
   const [position, setPosition] = useState<number>(8); // middle top default
@@ -40,8 +45,9 @@ export function ImagesPage() {
         ]);
         setCategories(cats);
         setLanguages(langs);
-        // default selection for upload form
-        setFormCategory(cats[0] || "");
+        // setFormCategory(cats[0] || "");
+        setFormCategory(cats[0]?.key || "");
+
         setFormLanguage(langs[0] || "");
         const imgs = await fetchImages({});
         setImages(imgs);
@@ -70,52 +76,62 @@ export function ImagesPage() {
   };
 
   const handleDelete = async (img: Image) => {
-    if (!window.confirm("Delete this image?")) return;
+    if (!window.confirm("Delete this media?")) return;
     try {
       await deleteImage(img.id);
       await reloadImages();
     } catch (err: any) {
-      alert(err.message || "Failed to delete image");
+      alert(err.message || "Failed to delete");
     }
   };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!file) {
-      alert("Please choose an image file.");
+      alert("Please select a file.");
       return;
     }
+
     if (!formCategory || !formLanguage) {
       alert("Please select category and language.");
       return;
     }
+
     try {
       setUploading(true);
+
       await uploadImage({
         file,
+        thumbnail, // optional now
+        mediaType,
         category: formCategory,
         language: formLanguage,
         position,
         isDate,
         showOnDate: isDate && showOnDate ? showOnDate : null,
       });
-      // clear file
+
+      // Reset form
       setFile(null);
-      (e.target as HTMLFormElement).reset();
+      setThumbnail(null);
       setShowOnDate("");
-      // reload
+      (e.target as HTMLFormElement).reset();
+
       await reloadImages();
     } catch (err: any) {
-      alert(err.message || "Failed to upload image");
+      alert(err.message || "Upload failed");
     } finally {
       setUploading(false);
     }
   };
 
+
   return (
     <div>
-      <h1>Images</h1>
+      <h1>Images / Videos</h1>
 
+      {/* ---------------- FILTERS ---------------- */}
       <section className="filters">
         <h2>Filter</h2>
         <div className="filter-row">
@@ -127,8 +143,8 @@ export function ImagesPage() {
             >
               <option value="">All</option>
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+                <option key={c.key} value={c.key}>
+                  {c.labels?.en ?? c.key}
                 </option>
               ))}
             </select>
@@ -155,17 +171,47 @@ export function ImagesPage() {
         </div>
       </section>
 
+      {/* ---------------- UPLOAD ---------------- */}
       <section className="upload-section">
-        <h2>Upload New Image</h2>
+        <h2>Upload New Media</h2>
+
         <form onSubmit={handleUpload} className="upload-form">
+          <label>
+            Media Type:
+            <select
+              value={mediaType}
+              onChange={(e) =>
+                setMediaType(e.target.value as "image" | "video")
+              }
+            >
+              <option value="image">Image</option>
+              <option value="video">Video</option>
+            </select>
+          </label>
+
           <label>
             File:
             <input
               type="file"
-              accept="image/*"
+              accept={mediaType === "image" ? "image/*" : "video/*"}
               onChange={(e) => setFile(e.target.files?.[0] || null)}
             />
           </label>
+
+          {mediaType === "video" && (
+            <label>
+              Thumbnail (optional):
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setThumbnail(e.target.files?.[0] || null)
+                }
+              />
+              <small>If not provided, thumbnail will be auto-generated.</small>
+            </label>
+          )}
+
 
           <label>
             Category:
@@ -174,10 +220,11 @@ export function ImagesPage() {
               onChange={(e) => setFormCategory(e.target.value)}
             >
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+                <option key={c.key} value={c.key}>
+                  {c.labels?.en ?? c.key}
                 </option>
               ))}
+
             </select>
           </label>
 
@@ -240,35 +287,50 @@ export function ImagesPage() {
         <PositionGuide />
       </section>
 
+      {/* ---------------- LIST ---------------- */}
       <section className="image-list">
-        <h2>Images List</h2>
-        {loading && <p>Loading images…</p>}
-        {!loading && images.length === 0 && <p>No images found.</p>}
+        <h2>Media List</h2>
+
+        {loading && <p>Loading…</p>}
+        {!loading && images.length === 0 && <p>No media found.</p>}
 
         {!loading && images.length > 0 && (
           <table className="image-table">
             <thead>
               <tr>
                 <th>Preview</th>
+                <th>Type</th>
                 <th>Category</th>
                 <th>Language</th>
                 <th>Position</th>
-                <th>Is Date?</th>
+                <th>Date?</th>
                 <th>Show On</th>
-                <th>Created At</th>
+                <th>Created</th>
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {images.map((img) => (
                 <tr key={img.id}>
                   <td>
-                    <img
-                      src={img.imageUrl}
-                      alt=""
-                      style={{ maxWidth: "80px", maxHeight: "80px" }}
-                    />
+                    {img.mediaType === "image" ? (
+                      <img
+                        src={img.imageUrl}
+                        alt=""
+                        style={{ maxWidth: 80, maxHeight: 80 }}
+                      />
+                    ) : (
+                      <video
+                        src={img.videoUrl ?? ""}
+                        poster={img.imageUrl}
+                        style={{ maxWidth: 120, maxHeight: 80 }}
+                        muted
+                      />
+                    )}
                   </td>
+
+                  <td>{img.mediaType === "video" ? "🎥 Video" : "🖼 Image"}</td>
                   <td>{img.category}</td>
                   <td>{img.language}</td>
                   <td>
