@@ -79,7 +79,6 @@ export interface ConstantListResponse {
   message: string[]; // from your Go controller
 }
 
-// raw image from Go (struct fields are exported as PascalCase)
 export interface ApiImageRaw {
   id: string;
   image_url: string;
@@ -89,28 +88,33 @@ export interface ApiImageRaw {
   category: string;
   language: string;
   position: number;
+  version: "v1" | "v2";
+  layout?: any | null;
   is_date: boolean;
   show_on_date?: string | null;
   created_at: string;
 }
 
-
 export interface Image {
   id: string;
-  imageUrl: string;        // preview (image OR video thumbnail)
+  imageUrl: string;
   videoUrl?: string | null;
   mediaType: "image" | "video";
   category: string;
   language: string;
+
+  version: "v1" | "v2";
   position: number;
+  layout?: any | null;
+
   isDate: boolean;
   showOnDate?: string | null;
   createdAt: string;
 }
 
 
-// map raw → nicer TS shape
-export function mapImage(raw: any): Image {
+
+export function mapImage(raw: ApiImageRaw): Image {
   return {
     id: raw.id,
     imageUrl: raw.image_url,
@@ -118,12 +122,17 @@ export function mapImage(raw: any): Image {
     mediaType: raw.media_type ?? "image",
     category: raw.category,
     language: raw.language,
+
+    version: raw.version ?? "v1",
     position: raw.position,
+    layout: raw.layout ?? null,
+
     isDate: raw.is_date,
     showOnDate: raw.show_on_date ?? null,
     createdAt: raw.created_at,
   };
 }
+
 
 
 // ---- Config APIs ----
@@ -189,18 +198,20 @@ export async function deleteImage(id: string): Promise<void> {
   });
 }
 
-// Upload uses multipart/form-data so we skip Content-Type
 export interface UploadImagePayload {
-  file: File;                     // image OR video
-  thumbnail?: File | null;        // REQUIRED if video
+  file: File;
+  thumbnail?: File | null;
   mediaType?: "image" | "video";
   category: string;
   language: string;
-  position: number;
+
+  version: "v1" | "v2";
+  position?: number;      // v1 only
+  layout?: object | null; // v2 only
+
   isDate: boolean;
   showOnDate?: string | null;
 }
-
 
 export async function uploadImage(payload: UploadImagePayload): Promise<Image> {
   const form = new FormData();
@@ -209,14 +220,21 @@ export async function uploadImage(payload: UploadImagePayload): Promise<Image> {
   form.append("media_type", payload.mediaType ?? "image");
   form.append("category", payload.category);
   form.append("language", payload.language);
-  form.append("position", String(payload.position));
+  form.append("version", payload.version);
   form.append("is_date", payload.isDate ? "true" : "false");
+
+  if (payload.version === "v1") {
+    form.append("position", String(payload.position ?? 0));
+  }
+
+  if (payload.version === "v2" && payload.layout) {
+    form.append("layout", JSON.stringify(payload.layout));
+  }
 
   if (payload.showOnDate) {
     form.append("show_on_date", payload.showOnDate);
   }
 
-  // 🔑 thumbnail only for video
   if (payload.mediaType === "video" && payload.thumbnail) {
     form.append("thumbnail", payload.thumbnail);
   }
@@ -235,10 +253,11 @@ export async function uploadImage(payload: UploadImagePayload): Promise<Image> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Upload failed: ${res.status}`);
+    throw new Error(text || `Upload failed`);
   }
 
   const data = await res.json();
-  return mapImage(data.media ?? data.image);
+  return mapImage(data.media);
 }
+
 
