@@ -189,9 +189,192 @@ function LayoutV2Editor({
           />
         </label>
       </fieldset>
+
+      {typeof value.video_duration === "number" && (
+        <fieldset>
+          <legend>Video Settings</legend>
+
+          <label>
+            Video Duration (seconds):
+            <input
+              type="number"
+              step="0.1"
+              min="0.1"
+              value={value.video_duration}
+              onChange={(e) =>
+                update(["video_duration"], Number(e.target.value))
+              }
+            />
+          </label>
+        </fieldset>
+      )}
+
     </div>
   );
 }
+
+
+function AnimationEditor({
+  title,
+  value,
+  onChange,
+}: {
+  title: string;
+  value: any[];
+  onChange: (v: any[]) => void;
+}) {
+  const update = (i: number, patch: any) => {
+    const copy = structuredClone(value);
+    copy[i] = { ...copy[i], ...patch };
+    onChange(copy);
+  };
+
+  const add = () => {
+    onChange([
+      ...value,
+      {
+        start_time: 0,
+        duration: 1,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 0 },
+        opacity: { from: 1, to: 1 },
+        easing: "linear",
+      },
+    ]);
+  };
+
+  const remove = (i: number) => {
+    const copy = [...value];
+    copy.splice(i, 1);
+    onChange(copy);
+  };
+
+  return (
+    <fieldset style={{ marginTop: 16 }}>
+      <legend>{title}</legend>
+
+      {value.map((a, i) => (
+        <div key={i} style={{ border: "1px solid #ddd", padding: 8, marginBottom: 8 }}>
+          <strong>Animation #{i + 1}</strong>
+
+          <label>
+            Start Time (s):
+            <input
+              type="number"
+              step="0.1"
+              value={a.start_time}
+              onChange={(e) => update(i, { start_time: +e.target.value })}
+            />
+          </label>
+
+          <label>
+            Duration (s):
+            <input
+              type="number"
+              step="0.1"
+              value={a.duration}
+              onChange={(e) => update(i, { duration: +e.target.value })}
+            />
+          </label>
+
+          <label>
+            From X:
+            <input
+              type="number"
+              value={a.from.x}
+              onChange={(e) =>
+                update(i, { from: { ...a.from, x: +e.target.value } })
+              }
+            />
+          </label>
+
+          <label>
+            From Y:
+            <input
+              type="number"
+              value={a.from.y}
+              onChange={(e) =>
+                update(i, { from: { ...a.from, y: +e.target.value } })
+              }
+            />
+          </label>
+
+          <label>
+            To X:
+            <input
+              type="number"
+              value={a.to.x}
+              onChange={(e) =>
+                update(i, { to: { ...a.to, x: +e.target.value } })
+              }
+            />
+          </label>
+
+          <label>
+            To Y:
+            <input
+              type="number"
+              value={a.to.y}
+              onChange={(e) =>
+                update(i, { to: { ...a.to, y: +e.target.value } })
+              }
+            />
+          </label>
+
+          <label>
+            Opacity From:
+            <input
+              type="number"
+              min="0"
+              max="1"
+              step="0.1"
+              value={a.opacity.from}
+              onChange={(e) =>
+                update(i, { opacity: { ...a.opacity, from: +e.target.value } })
+              }
+            />
+          </label>
+
+          <label>
+            Opacity To:
+            <input
+              type="number"
+              min="0"
+              max="1"
+              step="0.1"
+              value={a.opacity.to}
+              onChange={(e) =>
+                update(i, { opacity: { ...a.opacity, to: +e.target.value } })
+              }
+            />
+          </label>
+
+          <label>
+            Easing:
+            <select
+              value={a.easing}
+              onChange={(e) => update(i, { easing: e.target.value })}
+            >
+              <option value="linear">Linear</option>
+              <option value="ease_in">Ease In</option>
+              <option value="ease_out">Ease Out</option>
+              <option value="ease_in_out">Ease In Out</option>
+            </select>
+          </label>
+
+          <button type="button" onClick={() => remove(i)}>
+            Remove Animation
+          </button>
+        </div>
+      ))}
+
+      <button type="button" onClick={add}>
+        + Add Animation
+      </button>
+    </fieldset>
+  );
+}
+
 
 /* =====================================================
    MAIN PAGE
@@ -244,9 +427,16 @@ export function ImagesPage() {
         color: "#000000",
       },
     },
+
+    // 🔥 NEW (video only)
+    profile_anims: [],
+    name_anims: [],
+
     design_width: 1080,
     design_height: 1080,
+    video_duration: 5000,
   });
+
 
   // ---------- Load ----------
   useEffect(() => {
@@ -358,16 +548,43 @@ export function ImagesPage() {
             <label>
               Position:
               <select value={position} onChange={(e) => setPosition(+e.target.value)}>
-                {[1,2,3,4,5,6,7,8].map(p => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(p => (
                   <option key={p} value={p}>{p} – {positionLabel(p)}</option>
                 ))}
               </select>
             </label>
           )}
-
+{/* 
           {version === "v2" && (
             <LayoutV2Editor value={layoutV2} onChange={setLayoutV2} />
+          )} */}
+
+          {version === "v2" && (
+            <>
+              <LayoutV2Editor value={layoutV2} onChange={setLayoutV2} />
+
+              {mediaType === "video" && (
+                <>
+                  <AnimationEditor
+                    title="Profile Animations"
+                    value={layoutV2.profile_anims}
+                    onChange={(v) =>
+                      setLayoutV2({ ...layoutV2, profile_anims: v })
+                    }
+                  />
+
+                  <AnimationEditor
+                    title="Name Animations"
+                    value={layoutV2.name_anims}
+                    onChange={(v) =>
+                      setLayoutV2({ ...layoutV2, name_anims: v })
+                    }
+                  />
+                </>
+              )}
+            </>
           )}
+
 
           <button type="submit" disabled={uploading}>
             {uploading ? "Uploading…" : "Upload"}
