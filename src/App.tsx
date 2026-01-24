@@ -42,27 +42,46 @@ function AdminKeyBar() {
   );
 }
 
-function Sidebar() {
+function Sidebar({
+  collapsed,
+  onToggle,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
   const location = useLocation();
   return (
-    <nav className="sidebar">
-      <h2>Skywalker Admin</h2>
+    <nav className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      <div className="sidebar-header">
+        {!collapsed && <h2>Skywalker</h2>}
+        <button className="collapse-btn" onClick={onToggle}>
+          {collapsed ? "➡️" : "⬅️"}
+        </button>
+      </div>
+
       <ul>
         <li className={location.pathname.startsWith("/config") ? "active" : ""}>
-          <Link to="/config">Config</Link>
+          <Link to="/config">
+            ⚙️ {!collapsed && "Config"}
+          </Link>
         </li>
         <li className={location.pathname.startsWith("/images") ? "active" : ""}>
-          <Link to="/images">Images</Link>
+          <Link to="/images">
+            🖼️ {!collapsed && "Images"}
+          </Link>
         </li>
       </ul>
     </nav>
   );
 }
 
+
 function Layout() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
-    <div className="app-shell">
-      <Sidebar />
+    <div className={`app-shell ${collapsed ? "collapsed" : ""}`}>
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       <div className="main">
         <AdminKeyBar />
         <div className="content">
@@ -76,6 +95,7 @@ function Layout() {
     </div>
   );
 }
+
 
 function App() {
   return (
