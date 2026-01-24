@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
+
+/* =====================================================
+   Types
+===================================================== */
 
 type LayoutV2CanvasEditorProps = {
   layout: any;
@@ -7,23 +11,66 @@ type LayoutV2CanvasEditorProps = {
   onChange: (v: any) => void;
 };
 
+type DragState = {
+  layer: "profile" | "name";
+  startX: number;
+  startY: number;
+  origX: number;
+  origY: number;
+};
+
+/* =====================================================
+   Static Image Layer (NO FLICKER)
+===================================================== */
+
+const CanvasImage = React.memo(function CanvasImage({
+  imageUrl,
+  width,
+  height,
+}: {
+  imageUrl: string;
+  width: number;
+  height: number;
+}) {
+  return (
+    <img
+      src={imageUrl}
+      draggable={false}
+      alt=""
+      style={{
+        position: "absolute",
+        inset: 0,
+        width,
+        height,
+        objectFit: "contain",
+        backgroundColor: "#111",
+        pointerEvents: "none",
+        userSelect: "none",
+      }}
+    />
+  );
+});
+
+/* =====================================================
+   Main Editor
+===================================================== */
+
 export function LayoutV2CanvasEditor({
   layout,
   imageUrl,
   onChange,
 }: LayoutV2CanvasEditorProps) {
-  /* 🔥 Canvas preview scale (UI-only) */
+  /* Preview-only zoom */
   const [canvasScale, setCanvasScale] = useState(1);
 
-  const draggingRef = useRef<{
-    layer: "profile" | "name";
-    startX: number;
-    startY: number;
-    origX: number;
-    origY: number;
-  } | null>(null);
+  /* Drag refs */
+  const draggingRef = useRef<DragState | null>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLDivElement>(null);
 
-  /* ---------------- Drag to Move (scale-aware) ---------------- */
+  /* =====================================================
+     Drag Logic (NO React updates during drag)
+  ===================================================== */
 
   const startDrag = (
     e: React.MouseEvent,
@@ -48,35 +95,70 @@ export function LayoutV2CanvasEditor({
     window.addEventListener("mouseup", stopDrag);
   };
 
-  const onDrag = (e: MouseEvent) => {
+  const onDrag = useCallback(
+    (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+
+      const { layer, startX, startY } = draggingRef.current;
+
+      const dx = (e.clientX - startX) / canvasScale;
+      const dy = (e.clientY - startY) / canvasScale;
+
+      const el =
+        layer === "profile"
+          ? profileRef.current
+          : nameRef.current;
+
+      if (!el) return;
+
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+    },
+    [canvasScale]
+  );
+
+  const stopDrag = useCallback(() => {
     if (!draggingRef.current) return;
 
-    const { layer, startX, startY, origX, origY } =
-      draggingRef.current;
+    const { layer, origX, origY } = draggingRef.current;
 
-    const dx = (e.clientX - startX) / canvasScale;
-    const dy = (e.clientY - startY) / canvasScale;
+    const el =
+      layer === "profile"
+        ? profileRef.current
+        : nameRef.current;
 
-    const updated = structuredClone(layout);
+    if (el) {
+      const match = el.style.transform.match(
+        /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/
+      );
 
-    if (layer === "profile") {
-      updated.profile_layer.x = Math.round(origX + dx);
-      updated.profile_layer.y = Math.round(origY + dy);
-    } else {
-      updated.name_layer.x = Math.round(origX + dx);
-      updated.name_layer.y = Math.round(origY + dy);
+      if (match) {
+        const dx = Number(match[1]);
+        const dy = Number(match[2]);
+
+        const updated = structuredClone(layout);
+
+        if (layer === "profile") {
+          updated.profile_layer.x = Math.round(origX + dx);
+          updated.profile_layer.y = Math.round(origY + dy);
+        } else {
+          updated.name_layer.x = Math.round(origX + dx);
+          updated.name_layer.y = Math.round(origY + dy);
+        }
+
+        onChange(updated);
+      }
+
+      el.style.transform = "";
     }
 
-    onChange(updated);
-  };
-
-  const stopDrag = () => {
     draggingRef.current = null;
     window.removeEventListener("mousemove", onDrag);
     window.removeEventListener("mouseup", stopDrag);
-  };
+  }, [layout, onChange, onDrag]);
 
-  /* ---------------- Profile Size (CANONICAL = size) ---------------- */
+  /* =====================================================
+     Size Controls (Intentional React updates)
+  ===================================================== */
 
   const updateProfileSize = (size: number) => {
     const updated = structuredClone(layout);
@@ -84,17 +166,23 @@ export function LayoutV2CanvasEditor({
     onChange(updated);
   };
 
-  const updateNameSize = (v: number) => {
+  const updateNameSize = (size: number) => {
     const updated = structuredClone(layout);
-    updated.name_layer.text_size = v;
+    updated.name_layer.text_size = size;
     onChange(updated);
   };
 
-  /* 🔑 derive width/height from canonical size */
   const profileSize = layout.profile_layer.size;
 
+  const canvasWidth = layout.design_width * canvasScale;
+  const canvasHeight = layout.design_height * canvasScale;
+
+  /* =====================================================
+     Render
+  ===================================================== */
+
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{ marginBottom: 24 }}>
       <h3>Canvas Preview</h3>
 
       {/* ---------- CONTROLS ---------- */}
@@ -107,8 +195,7 @@ export function LayoutV2CanvasEditor({
           flexWrap: "wrap",
         }}
       >
-        {/* Canvas Zoom */}
-        <label style={{ fontSize: 14 }}>
+        <label>
           Canvas Zoom&nbsp;
           <strong>{Math.round(canvasScale * 100)}%</strong>
           <input
@@ -123,8 +210,7 @@ export function LayoutV2CanvasEditor({
           />
         </label>
 
-        {/* ✅ Profile Size (FIXED) */}
-        <label style={{ fontSize: 14 }}>
+        <label>
           Profile Size&nbsp;
           <strong>{profileSize}px</strong>
           <input
@@ -139,8 +225,7 @@ export function LayoutV2CanvasEditor({
           />
         </label>
 
-        {/* Name Size */}
-        <label style={{ fontSize: 14 }}>
+        <label>
           Name Size&nbsp;
           <strong>{layout.name_layer.text_size}px</strong>
           <input
@@ -160,20 +245,25 @@ export function LayoutV2CanvasEditor({
       <div
         style={{
           position: "relative",
-          width: layout.design_width * canvasScale,
-          height: layout.design_height * canvasScale,
-          backgroundImage: `url(${imageUrl})`,
-          backgroundSize: "contain",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
-          backgroundColor: "#111",
+          width: canvasWidth,
+          height: canvasHeight,
           border: "2px solid #999",
-          marginBottom: 10,
+          overflow: "hidden",
           userSelect: "none",
+          background: "#111",
+          contain: "layout paint size",
         }}
       >
+        {/* STATIC IMAGE (NO FLICKER EVER) */}
+        <CanvasImage
+          imageUrl={imageUrl}
+          width={canvasWidth}
+          height={canvasHeight}
+        />
+
         {/* PROFILE LAYER */}
         <div
+          ref={profileRef}
           onMouseDown={(e) => startDrag(e, "profile")}
           style={{
             position: "absolute",
@@ -189,13 +279,16 @@ export function LayoutV2CanvasEditor({
             border: layout.profile_layer.border.enabled
               ? `${layout.profile_layer.border.width}px solid ${layout.profile_layer.border.color}`
               : "none",
-            cursor: "move",
             boxSizing: "border-box",
+            cursor: "move",
+            willChange: "transform",
+            zIndex: 2,
           }}
         />
 
         {/* NAME LAYER */}
         <div
+          ref={nameRef}
           onMouseDown={(e) => startDrag(e, "name")}
           style={{
             position: "absolute",
@@ -203,11 +296,12 @@ export function LayoutV2CanvasEditor({
             top: layout.name_layer.y * canvasScale,
             fontSize: layout.name_layer.text_size * canvasScale,
             color: layout.name_layer.color,
-            textAlign: layout.name_layer.align,
             fontFamily: "Poppins, sans-serif",
             fontWeight: 600,
             whiteSpace: "nowrap",
             cursor: "move",
+            willChange: "transform",
+            zIndex: 3,
             textShadow: layout.name_layer.shadow?.enabled
               ? `${layout.name_layer.shadow.dx}px
                  ${layout.name_layer.shadow.dy}px
@@ -221,7 +315,8 @@ export function LayoutV2CanvasEditor({
       </div>
 
       <small>
-        👉 Canvas zoom is preview-only. Layout values stay real.
+        👉 Canvas zoom is preview-only. Layout values remain
+        canonical.
       </small>
     </div>
   );

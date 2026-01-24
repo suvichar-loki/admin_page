@@ -15,6 +15,55 @@ import { positionLabel } from "../position";
 import { PositionGuide } from "../components/PositionGuide";
 import { LayoutV2CanvasEditor } from "../components/LayoutV2CanvasEditor";
 
+
+function convertLayoutToCenter(layout: any) {
+  const size = layout.profile_layer.size;
+
+  return {
+    ...layout,
+    profile_layer: {
+      ...layout.profile_layer,
+      x: Math.round(layout.profile_layer.x + size / 2),
+      y: Math.round(layout.profile_layer.y + size / 2)
+    },
+  };
+}
+
+
+const DEFAULT_LAYOUT = {
+  profile_layer: {
+    x: 540,
+    y: 820,
+    size: 160,
+    shape: "circle",
+    border: { enabled: true, color: "#FFFFFF", width: 4 },
+  },
+  name_layer: {
+    x: 540,
+    y: 930,
+    max_width: 600,
+    text_size: 42,
+    color: "#FFFFFF",
+    align: "center",
+    font: "poppins_semi_bold",
+    shadow: {
+      enabled: true,
+      dx: 0,
+      dy: 2,
+      blur: 6,
+      color: "#000000",
+    },
+  },
+
+  // 🔥 NEW (video only)
+  profile_anims: [],
+  name_anims: [],
+
+  design_width: 1080,
+  design_height: 1080,
+  video_duration: 5000,
+};
+
 /* =====================================================
    Layout V2 Editor (INLINE, COMPLETE, EDITABLE)
 ===================================================== */
@@ -549,39 +598,7 @@ export function ImagesPage() {
   const [showOnDate, setShowOnDate] = useState("");
 
   // ---------- V2 Layout State ----------
-  const [layoutV2, setLayoutV2] = useState<any>({
-    profile_layer: {
-      x: 540,
-      y: 820,
-      size: 160,
-      shape: "circle",
-      border: { enabled: true, color: "#FFFFFF", width: 4 },
-    },
-    name_layer: {
-      x: 540,
-      y: 930,
-      max_width: 600,
-      text_size: 42,
-      color: "#FFFFFF",
-      align: "center",
-      font: "poppins_semi_bold",
-      shadow: {
-        enabled: true,
-        dx: 0,
-        dy: 2,
-        blur: 6,
-        color: "#000000",
-      },
-    },
-
-    // 🔥 NEW (video only)
-    profile_anims: [],
-    name_anims: [],
-
-    design_width: 1080,
-    design_height: 1080,
-    video_duration: 5000,
-  });
+  const [layoutV2, setLayoutV2] = useState<any>(DEFAULT_LAYOUT);
 
   const previewUrl = file ? URL.createObjectURL(file) : "";
   useEffect(() => {
@@ -642,6 +659,8 @@ export function ImagesPage() {
 
     setUploading(true);
     try {
+      const layoutForPost = convertLayoutToCenter(layoutV2)
+
       await uploadImage({
         file,
         thumbnail,
@@ -650,11 +669,16 @@ export function ImagesPage() {
         language: formLanguage,
         version,
         position: version === "v1" ? position : undefined,
-        layout: version === "v2" ? layoutV2 : undefined,
+        layout: layoutForPost,
         isDate,
         showOnDate: isDate ? showOnDate : null,
       });
-      await reloadImages();
+
+      setFile(null);
+      setThumbnail(null);
+      setLayoutV2(DEFAULT_LAYOUT);
+
+      // await reloadImages();
     } finally {
       setUploading(false);
     }
