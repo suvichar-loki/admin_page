@@ -676,7 +676,7 @@ export function ImagesPage() {
 
       setFile(null);
       setThumbnail(null);
-      setLayoutV2(DEFAULT_LAYOUT);
+      // setLayoutV2(DEFAULT_LAYOUT);
 
       // await reloadImages();
     } finally {
