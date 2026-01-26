@@ -18,6 +18,7 @@ import { LayoutV2CanvasEditor } from "../components/LayoutV2CanvasEditor";
 
 function convertLayoutToCenter(layout: any) {
   const size = layout.profile_layer.size;
+  const size2 = layout.name_layer.text_size;
 
   return {
     ...layout,
@@ -25,6 +26,10 @@ function convertLayoutToCenter(layout: any) {
       ...layout.profile_layer,
       x: Math.round(layout.profile_layer.x + size / 2),
       y: Math.round(layout.profile_layer.y + size / 2)
+    },
+    name_layer: {
+      ...layout.name_layer,
+      y: Math.round(layout.name_layer.y + size2)
     },
   };
 }
@@ -674,8 +679,8 @@ export function ImagesPage() {
         showOnDate: isDate ? showOnDate : null,
       });
 
-      setFile(null);
-      setThumbnail(null);
+      // setFile(null);
+      // setThumbnail(null);
       // setLayoutV2(DEFAULT_LAYOUT);
 
       // await reloadImages();
