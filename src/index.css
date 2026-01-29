@@ -366,3 +366,19 @@ fieldset > div button {
     grid-template-columns: 1fr;
   }
 }
+
+
+.images-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.images-table th,
+.images-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.images-table th {
+  background: #f5f5f5;
+}

@@ -577,7 +577,7 @@ function AnimationEditor({
 /* =====================================================
    MAIN PAGE
 ===================================================== */
-export function ImagesPage() {
+export function Uploader() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
   const [images, setImages] = useState<Image[]>([]);

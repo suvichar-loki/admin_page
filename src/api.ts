@@ -93,7 +93,9 @@ export interface ApiImageRaw {
   is_date: boolean;
   show_on_date?: string | null;
   created_at: string;
+  is_trending: boolean; // ✅ ADD THIS
 }
+
 
 export interface Image {
   id: string;
@@ -110,6 +112,8 @@ export interface Image {
   isDate: boolean;
   showOnDate?: string | null;
   createdAt: string;
+
+  isTrending: boolean; // ✅ ADD THIS
 }
 
 
@@ -130,6 +134,8 @@ export function mapImage(raw: ApiImageRaw): Image {
     isDate: raw.is_date,
     showOnDate: raw.show_on_date ?? null,
     createdAt: raw.created_at,
+
+    isTrending: raw.is_trending, // ✅
   };
 }
 
@@ -261,3 +267,56 @@ export async function uploadImage(payload: UploadImagePayload): Promise<Image> {
 }
 
 
+export interface ImageListResponse {
+  message: ApiImageRaw[];
+  count: number;
+  next: number;
+}
+
+export interface ImageListParams {
+  category?: string;
+  language?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function fetchImagesAdmin(
+  params: ImageListParams
+): Promise<{ images: Image[]; next: number }> {
+
+  const category = params.category ?? "";
+  const language = params.language ?? "";
+  if (category == "" || language == "") {
+    return {
+      images: [],
+      next: 0,
+    };
+  }
+
+  const query = new URLSearchParams();
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.offset !== undefined) query.set("offset", String(params.offset));
+
+  const suffix = query.toString() ? `?${query}` : "";
+
+  const res = await apiJson<ImageListResponse>(
+    `/internal/v2/images/fetch/${category}/${language}${suffix}`,
+    { method: "GET" }
+  );
+
+  return {
+    images: res.message.map(mapImage),
+    next: res.next,
+  };
+}
+
+
+export async function updateTrending(
+  id: string,
+  isTrending: boolean
+): Promise<void> {
+  await apiJson(`/internal/images/${id}/trending`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_trending: isTrending }),
+  });
+}
