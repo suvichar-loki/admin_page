@@ -2,46 +2,46 @@
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import "./index.css";
 import { useState } from "react";
-import {
-  getAdminClientKey,
-  setAdminClientKey,
-  clearAdminClientKey,
-} from "./api";
+// import {
+//   getAdminClientKey,
+//   setAdminClientKey,
+//   clearAdminClientKey,
+// } from "./api";
 import { ConfigPage } from "./pages/ConfigPage";
 import { Uploader } from "./pages/ImagesPage";
 import { ImagesListPage } from "./pages/ImageListPage";
 
-function AdminKeyBar() {
-  const [value, setValue] = useState(getAdminClientKey() || "");
+// function AdminKeyBar() {
+//   const [value, setValue] = useState(getAdminClientKey() || "");
 
-  const handleSave = () => {
-    setAdminClientKey(value.trim());
-    // just visually confirm; you can add toast
-    alert("Admin client key saved locally.");
-  };
+//   const handleSave = () => {
+//     setAdminClientKey(value.trim());
+//     // just visually confirm; you can add toast
+//     alert("Admin client key saved locally.");
+//   };
 
-  const handleClear = () => {
-    clearAdminClientKey();
-    setValue("");
-    alert("Admin client key cleared.");
-  };
+//   const handleClear = () => {
+//     clearAdminClientKey();
+//     setValue("");
+//     alert("Admin client key cleared.");
+//   };
 
-  return (
-    <div className="admin-key-bar">
-      <label>
-        Admin Client Key:
-        <input
-          type="password"
-          value={value}
-          placeholder="X-Client-Key value"
-          onChange={(e) => setValue(e.target.value)}
-        />
-      </label>
-      <button onClick={handleSave}>Save</button>
-      <button onClick={handleClear}>Clear</button>
-    </div>
-  );
-}
+//   return (
+//     <div className="admin-key-bar">
+//       <label>
+//         Admin Client Key:
+//         <input
+//           type="password"
+//           value={value}
+//           placeholder="X-Client-Key value"
+//           onChange={(e) => setValue(e.target.value)}
+//         />
+//       </label>
+//       <button onClick={handleSave}>Save</button>
+//       <button onClick={handleClear}>Clear</button>
+//     </div>
+//   );
+// }
 
 function Sidebar({
   collapsed,
@@ -89,7 +89,7 @@ function Layout() {
     <div className={`app-shell ${collapsed ? "collapsed" : ""}`}>
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       <div className="main">
-        <AdminKeyBar />
+        {/* <AdminKeyBar /> */}
         <div className="content">
           <Routes>
             <Route path="/config" element={<ConfigPage />} />
