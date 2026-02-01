@@ -37,22 +37,22 @@ function convertLayoutToCenter(layout: any) {
 
 const DEFAULT_LAYOUT = {
   profile_layer: {
-    x: 540,
-    y: 820,
+    x: 100,
+    y: 100,
     size: 160,
     shape: "circle",
-    border: { enabled: true, color: "#FFFFFF", width: 4 },
+    border: { enabled: false, color: "#FFFFFF", width: 4 },
   },
   name_layer: {
-    x: 540,
-    y: 930,
+    x: 100,
+    y: 100,
     max_width: 600,
     text_size: 42,
     color: "#FFFFFF",
     align: "center",
     font: "poppins_semi_bold",
     shadow: {
-      enabled: true,
+      enabled: false,
       dx: 0,
       dy: 2,
       blur: 6,
@@ -606,20 +606,55 @@ export function Uploader() {
   const [layoutV2, setLayoutV2] = useState<any>(DEFAULT_LAYOUT);
 
   const previewUrl = file ? URL.createObjectURL(file) : "";
+  // useEffect(() => {
+  //   if (!previewUrl) return;
+
+  //   const img = new Image();
+  //   img.src = previewUrl;
+
+  //   img.onload = () => {
+  //     setLayoutV2((prev: any) => ({
+  //       ...prev,
+  //       design_width: img.naturalWidth,
+  //       design_height: img.naturalHeight,
+  //     }));
+  //   };
+  // }, [previewUrl]);
+
   useEffect(() => {
     if (!previewUrl) return;
 
-    const img = new Image();
-    img.src = previewUrl;
+    // ---------- IMAGE ----------
+    if (mediaType === "image") {
+      const img = new Image();
+      img.src = previewUrl;
 
-    img.onload = () => {
-      setLayoutV2((prev: any) => ({
-        ...prev,
-        design_width: img.naturalWidth,
-        design_height: img.naturalHeight,
-      }));
-    };
-  }, [previewUrl]);
+      img.onload = () => {
+        setLayoutV2((prev: any) => ({
+          ...prev,
+          design_width: img.naturalWidth,
+          design_height: img.naturalHeight,
+        }));
+      };
+    }
+
+    // ---------- VIDEO ----------
+    if (mediaType === "video") {
+      const video = document.createElement("video");
+      video.src = previewUrl;
+      video.preload = "metadata";
+
+      video.onloadedmetadata = () => {
+        setLayoutV2((prev: any) => ({
+          ...prev,
+          design_width: video.videoWidth,
+          design_height: video.videoHeight,
+          video_duration: Math.round(video.duration * 1000), // ms (correct)
+        }));
+      };
+    }
+  }, [previewUrl, mediaType]);
+
 
 
 
@@ -750,6 +785,7 @@ export function Uploader() {
                   layout={layoutV2}
                   imageUrl={previewUrl}
                   onChange={setLayoutV2}
+                  isVideo={mediaType == "video"}
                 />
               </div>
 

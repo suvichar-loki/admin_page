@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 
 /* =====================================================
    Types
@@ -7,8 +7,9 @@ import React, { useRef, useState, useCallback } from "react";
 
 type LayoutV2CanvasEditorProps = {
   layout: any;
-  imageUrl: string;
+  imageUrl: string; // image OR video
   onChange: (v: any) => void;
+  isVideo: boolean;
 };
 
 type DragState = {
@@ -46,6 +47,7 @@ const CanvasImage = React.memo(function CanvasImage({
         backgroundColor: "#111",
         pointerEvents: "none",
         userSelect: "none",
+        zIndex: 0,
       }}
     />
   );
@@ -59,6 +61,7 @@ export function LayoutV2CanvasEditor({
   layout,
   imageUrl,
   onChange,
+  isVideo,
 }: LayoutV2CanvasEditorProps) {
   /* Preview-only zoom */
   const [canvasScale, setCanvasScale] = useState(1);
@@ -68,8 +71,44 @@ export function LayoutV2CanvasEditor({
   const profileRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLDivElement>(null);
 
+  /* Video refs */
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoUnlockedRef = useRef(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isVideo || !videoContainerRef.current || videoRef.current) return;
+
+    const video = document.createElement("video");
+    video.src = imageUrl;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = "auto";
+
+    video.style.position = "absolute";
+    video.style.inset = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.objectFit = "contain";
+    video.style.background = "#111";
+
+    // 🔑 THESE TWO LINES FIX EVERYTHING
+    video.style.zIndex = "0";
+    video.style.pointerEvents = "none";
+
+    videoRef.current = video;
+    videoContainerRef.current.appendChild(video);
+  }, [isVideo, imageUrl]);
+
+
+
+
+  // const isVideo = /\.(mp4|webm|ogg)$/i.test(imageUrl);
+  // console.log("is vide o ", isVideo, imageUrl)
+
   /* =====================================================
-     Drag Logic (NO React updates during drag)
+     Drag Logic (UNCHANGED)
   ===================================================== */
 
   const startDrag = (
@@ -100,7 +139,6 @@ export function LayoutV2CanvasEditor({
       if (!draggingRef.current) return;
 
       const { layer, startX, startY } = draggingRef.current;
-
       const dx = (e.clientX - startX) / canvasScale;
       const dy = (e.clientY - startY) / canvasScale;
 
@@ -110,7 +148,6 @@ export function LayoutV2CanvasEditor({
           : nameRef.current;
 
       if (!el) return;
-
       el.style.transform = `translate(${dx}px, ${dy}px)`;
     },
     [canvasScale]
@@ -120,7 +157,6 @@ export function LayoutV2CanvasEditor({
     if (!draggingRef.current) return;
 
     const { layer, origX, origY } = draggingRef.current;
-
     const el =
       layer === "profile"
         ? profileRef.current
@@ -134,7 +170,6 @@ export function LayoutV2CanvasEditor({
       if (match) {
         const dx = Number(match[1]);
         const dy = Number(match[2]);
-
         const updated = structuredClone(layout);
 
         if (layer === "profile") {
@@ -147,7 +182,6 @@ export function LayoutV2CanvasEditor({
 
         onChange(updated);
       }
-
       el.style.transform = "";
     }
 
@@ -157,7 +191,23 @@ export function LayoutV2CanvasEditor({
   }, [layout, onChange, onDrag]);
 
   /* =====================================================
-     Size Controls (Intentional React updates)
+     Video Unlock (USER GESTURE)
+  ===================================================== */
+
+  const unlockVideo = () => {
+    if (!isVideo) return;
+    if (videoUnlockedRef.current) return;
+
+    const v = videoRef.current;
+    if (!v) return;
+
+    v.muted = true;
+    v.play().catch(() => { });
+    videoUnlockedRef.current = true;
+  };
+
+  /* =====================================================
+     Size Controls (UNCHANGED)
   ===================================================== */
 
   const updateProfileSize = (size: number) => {
@@ -173,7 +223,6 @@ export function LayoutV2CanvasEditor({
   };
 
   const profileSize = layout.profile_layer.size;
-
   const canvasWidth = layout.design_width * canvasScale;
   const canvasHeight = layout.design_height * canvasScale;
 
@@ -185,7 +234,7 @@ export function LayoutV2CanvasEditor({
     <div style={{ marginBottom: 24 }}>
       <h3>Canvas Preview</h3>
 
-      {/* ---------- CONTROLS ---------- */}
+      {/* ---------- CONTROLS (PRESERVED) ---------- */}
       <div
         style={{
           display: "flex",
@@ -243,25 +292,74 @@ export function LayoutV2CanvasEditor({
 
       {/* ---------- CANVAS ---------- */}
       <div
+        onMouseDown={unlockVideo}
         style={{
           position: "relative",
           width: canvasWidth,
           height: canvasHeight,
           border: "2px solid #999",
           overflow: "hidden",
-          userSelect: "none",
           background: "#111",
-          contain: "layout paint size",
+          userSelect: "none",
         }}
       >
-        {/* STATIC IMAGE (NO FLICKER EVER) */}
-        <CanvasImage
-          imageUrl={imageUrl}
-          width={canvasWidth}
-          height={canvasHeight}
-        />
+        {/* BACKGROUND */}
+        {/* {isVideo ? (
+          <>
+            <video
+              ref={videoRef}
+              src={imageUrl}
+              muted
+              loop
+              playsInline
+              preload="auto"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: canvasWidth,
+                height: canvasHeight,
+                objectFit: "contain",
+                zIndex: 0,
+              }}
+            />
 
-        {/* PROFILE LAYER */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0,0,0,0.01)",
+                zIndex: 1,
+              }}
+            />
+          </>
+        ) : (
+          <CanvasImage
+            imageUrl={imageUrl}
+            width={canvasWidth}
+            height={canvasHeight}
+          />
+        )} */}
+
+        {/* BACKGROUND */}
+        {isVideo ? (
+          <div
+            ref={videoContainerRef}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+            }}
+          />
+        ) : (
+          <CanvasImage
+            imageUrl={imageUrl}
+            width={canvasWidth}
+            height={canvasHeight}
+          />
+        )}
+
+
+        {/* PROFILE LAYER (UNCHANGED) */}
         <div
           ref={profileRef}
           onMouseDown={(e) => startDrag(e, "profile")}
@@ -281,12 +379,11 @@ export function LayoutV2CanvasEditor({
               : "none",
             boxSizing: "border-box",
             cursor: "move",
-            willChange: "transform",
             zIndex: 2,
           }}
         />
 
-        {/* NAME LAYER */}
+        {/* NAME LAYER (UNCHANGED) */}
         <div
           ref={nameRef}
           onMouseDown={(e) => startDrag(e, "name")}
@@ -300,7 +397,6 @@ export function LayoutV2CanvasEditor({
             fontWeight: 600,
             whiteSpace: "nowrap",
             cursor: "move",
-            willChange: "transform",
             zIndex: 3,
             textShadow: layout.name_layer.shadow?.enabled
               ? `${layout.name_layer.shadow.dx}px
@@ -315,8 +411,8 @@ export function LayoutV2CanvasEditor({
       </div>
 
       <small>
-        👉 Canvas zoom is preview-only. Layout values remain
-        canonical.
+        👉 For videos, click or drag once to start playback.
+        All controls work the same as images.
       </small>
     </div>
   );
