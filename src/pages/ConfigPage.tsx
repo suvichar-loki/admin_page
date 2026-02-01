@@ -1,23 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/pages/ConfigPage.tsx
 import { useEffect, useState } from "react";
 import {
   fetchCategories,
   fetchLanguages,
-  updateCategories,
+  addCategory,
+  deleteCategory,
   updateLanguages,
   type Category,
 } from "../api";
+import './config.css'
 
 export function ConfigPage() {
-  // const [categories, setCategories] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [newCategory, setNewCategory] = useState("");
+  const [newCategoryEn, setNewCategoryEn] = useState("");
+  const [newCategoryHi, setNewCategoryHi] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
 
   useEffect(() => {
@@ -25,10 +27,12 @@ export function ConfigPage() {
       try {
         setLoading(true);
         setError(null);
+
         const [cats, langs] = await Promise.all([
           fetchCategories(),
           fetchLanguages(),
         ]);
+
         setCategories(cats);
         setLanguages(langs);
       } catch (err: any) {
@@ -37,103 +41,134 @@ export function ConfigPage() {
         setLoading(false);
       }
     };
+
     load();
   }, []);
 
   const handleAddCategory = async () => {
-    const val = newCategory.trim();
-    if (!val) return;
+    const en = newCategoryEn.trim();
+    const hi = newCategoryHi.trim();
+    if (!en) return alert("English label is required");
 
-    // 🔑 check by key
-    if (categories.some((c) => c.key === val)) {
-      alert("Category already exists.");
+    if (categories.some((c) => c.key === en)) {
+      alert("Category already exists");
       return;
     }
 
     try {
       setSaving(true);
-
-      const updated = [...categories, { key: val }];
-
-      await updateCategories(updated);
-      setCategories(updated);
-      setNewCategory("");
-    } catch (err: any) {
-      alert(err.message || "Failed to save categories");
+      await addCategory({ en, hi });
+      setCategories((prev) => [...prev, { key: en, labels: { en, hi } }]);
+      setNewCategoryEn("");
+      setNewCategoryHi("");
     } finally {
       setSaving(false);
     }
   };
 
+  const handleDeleteCategory = async (key: string) => {
+    if (!confirm(`Delete "${key}"?`)) return;
+    try {
+      setSaving(true);
+      await deleteCategory(key);
+      setCategories((prev) => prev.filter((c) => c.key !== key));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleAddLanguage = async () => {
     const val = newLanguage.trim();
-    if (!val) return;
-    if (languages.includes(val)) {
-      alert("Language already exists.");
-      return;
-    }
+    if (!val || languages.includes(val)) return;
+
     try {
       setSaving(true);
       const updated = [...languages, val];
       await updateLanguages(updated);
       setLanguages(updated);
       setNewLanguage("");
-    } catch (err: any) {
-      alert(err.message || "Failed to save languages");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div>
-      <h1>Config</h1>
-      {loading && <p>Loading config…</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <div className="config-page">
+      {/* ---------- Header ---------- */}
+      <div className="config-header">
+        <h1>App Configuration</h1>
+        {saving && <span className="saving">Saving…</span>}
+      </div>
 
-      <div className="config-section">
-        <h2>Categories</h2>
-        <ul>
+      {loading && <p>Loading…</p>}
+      {error && <p className="error">{error}</p>}
+
+      {/* ---------- Categories ---------- */}
+      <section className="config-card">
+        <div className="card-header">
+          <h2>Categories</h2>
+          <div className="card-actions">
+            <input
+              placeholder="English"
+              value={newCategoryEn}
+              onChange={(e) => setNewCategoryEn(e.target.value)}
+            />
+            <input
+              placeholder="Hindi (optional)"
+              value={newCategoryHi}
+              onChange={(e) => setNewCategoryHi(e.target.value)}
+            />
+            <button onClick={handleAddCategory} disabled={saving}>
+              + Add
+            </button>
+          </div>
+        </div>
+
+        <div className="category-grid">
           {categories.map((cat) => (
-            <li key={cat.key}>
-              {cat.labels?.en ?? cat.key}
-            </li>
+            <div key={cat.key} className="category-tile">
+              <div>
+                <strong>{cat.labels.en}</strong>
+                {cat.labels.hi && (
+                  <div className="muted">{cat.labels.hi}</div>
+                )}
+              </div>
+              <button
+                className="delete-btn"
+                onClick={() => handleDeleteCategory(cat.key)}
+                disabled={saving}
+              >
+                ✕
+              </button>
+            </div>
           ))}
-
-        </ul>
-        <div className="config-add-row">
-          <input
-            type="text"
-            value={newCategory}
-            placeholder="New category"
-            onChange={(e) => setNewCategory(e.target.value)}
-          />
-          <button disabled={saving} onClick={handleAddCategory}>
-            Add
-          </button>
         </div>
-      </div>
+      </section>
 
-      <div className="config-section">
-        <h2>Languages</h2>
-        <ul>
+      {/* ---------- Languages ---------- */}
+      <section className="config-card">
+        <div className="card-header">
+          <h2>Languages</h2>
+          <div className="card-actions">
+            <input
+              placeholder="New language"
+              value={newLanguage}
+              onChange={(e) => setNewLanguage(e.target.value)}
+            />
+            <button onClick={handleAddLanguage} disabled={saving}>
+              + Add
+            </button>
+          </div>
+        </div>
+
+        <div className="language-grid">
           {languages.map((lang) => (
-            <li key={lang}>{lang}</li>
+            <div key={lang} className="language-chip">
+              {lang}
+            </div>
           ))}
-        </ul>
-        <div className="config-add-row">
-          <input
-            type="text"
-            value={newLanguage}
-            placeholder="New language"
-            onChange={(e) => setNewLanguage(e.target.value)}
-          />
-          <button disabled={saving} onClick={handleAddLanguage}>
-            Add
-          </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

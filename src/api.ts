@@ -18,6 +18,7 @@ export function getAdminSecretKey(): string {
   return ADMIN_SECRET;
 }
 
+
 export function setAdminClientKey(key: string) {
   // localStorage.setItem(ADMIN_KEY, key);
   console.log("key ", key)
@@ -29,20 +30,27 @@ export function clearAdminClientKey() {
 
 // ---- Category types ----
 
-export interface CategoryLabels {
-  [lang: string]: string; // en, hi, etc
-}
+// export interface CategoryLabels {
+//   [lang: string]: string;
+// }
 
-export interface Category {
-  key: string;                   // Festival
-  labels?: CategoryLabels;       // { en: "Festival", hi: "त्योहार" }
-}
+// export interface Category {
+//   key: string;
+//   labels?: CategoryLabels;
+// }
 
 
 export interface CategoryListResponse {
   categories: Category[];
 }
 
+export type Category = {
+  key: string;
+  labels: {
+    en: string;
+    hi?: string;
+  };
+};
 
 // ---- Helper for JSON requests ----
 async function apiJson<T>(
@@ -143,21 +151,50 @@ export function mapImage(raw: ApiImageRaw): Image {
 
 // ---- Config APIs ----
 
+// export async function fetchCategories(): Promise<Category[]> {
+//   const res = await apiJson<CategoryListResponse>(
+//     "/admin/config/categories",
+//     { method: "GET" }
+//   );
+//   return res.categories || [];
+// }
+
 export async function fetchCategories(): Promise<Category[]> {
   const res = await apiJson<CategoryListResponse>(
     "/admin/config/categories",
     { method: "GET" }
   );
-  return res.categories || [];
+  return res.categories;
 }
 
 
-export async function updateCategories(categories: Category[]): Promise<void> {
+
+export async function addCategory(payload: {
+  en: string;
+  hi?: string;
+}) {
   await apiJson("/admin/config/categories", {
     method: "POST",
-    body: JSON.stringify({ categories }),
+    body: JSON.stringify(payload),
   });
 }
+
+
+export async function deleteCategory(key: string) {
+  await apiJson("/admin/config/categories", {
+    method: "DELETE",
+    body: JSON.stringify({ key }),
+  });
+}
+
+
+
+// export async function updateCategories(categories: Category[]): Promise<void> {
+//   await apiJson("/admin/config/categories", {
+//     method: "POST",
+//     body: JSON.stringify({ categories }),
+//   });
+// }
 
 
 export async function fetchLanguages(): Promise<string[]> {

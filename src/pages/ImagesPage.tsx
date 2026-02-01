@@ -277,9 +277,25 @@ function LayoutV2Editor({
               update(["name_layer", "font"], e.target.value)
             }
           >
-            <option value="poppins_semi_bold">Poppins Semi Bold</option>
-            <option value="poppins_regular">Poppins Regular</option>
-            <option value="inter_bold">Inter Bold</option>
+            <option value="amita">Amita</option>
+            <option value="bakbakone">Bakbak One</option>
+            <option value="dekko">Dekko</option>
+            <option value="gotu">Gotu</option>
+            <option value="ibm_plex_sans">IBM Plex Sans</option>
+            <option value="jaini">Jaini</option>
+            <option value="palanquin_dark">Palanquin Dark</option>
+            <option value="ranga">Ranga</option>
+            <option value="roboto">Roboto</option>
+            <option value="rozha_one">Rozha One</option>
+            <option value="sura">Sura</option>
+            <option value="tiro_devanagari_hindi">Tiro Devanagari Hindi</option>
+            <option value="vesper_libre">Vesper Libre</option>
+            <option value="yatra_one">Yatra One</option>
+            <option value="kalam">Kalam</option>
+            <option value="google_sans">Google Sans</option>
+            <option value="kurale">Kurale</option>
+            <option value="monsieur_la_doulaise">Monsieur La Doulaise</option>
+
           </select>
         </label>
 
