@@ -10,6 +10,7 @@ import { useState } from "react";
 import { ConfigPage } from "./pages/ConfigPage";
 import { Uploader } from "./pages/ImagesPage";
 import { ImagesListPage } from "./pages/ImageListPage";
+import { EditImagePage } from "./pages/EditImagePage";
 
 // function AdminKeyBar() {
 //   const [value, setValue] = useState(getAdminClientKey() || "");
@@ -96,6 +97,7 @@ function Layout() {
             <Route path="/upload" element={<Uploader />} />
             <Route path="/images" element={<ImagesListPage />} />
             <Route path="*" element={<Navigate to="/config" replace />} />
+            <Route path="/images/:id/edit" element={<EditImagePage />} />
           </Routes>
         </div>
       </div>

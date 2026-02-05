@@ -265,7 +265,7 @@ export function LayoutV2CanvasEditor({
           <input
             type="range"
             min={40}
-            max={500}
+            max={1000}
             step={2}
             value={profileSize}
             onChange={(e) =>

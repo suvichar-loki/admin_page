@@ -14,25 +14,7 @@ import {
 import { positionLabel } from "../position";
 import { PositionGuide } from "../components/PositionGuide";
 import { LayoutV2CanvasEditor } from "../components/LayoutV2CanvasEditor";
-
-
-function convertLayoutToCenter(layout: any) {
-  const size = layout.profile_layer.size;
-  const size2 = layout.name_layer.text_size;
-
-  return {
-    ...layout,
-    profile_layer: {
-      ...layout.profile_layer,
-      x: Math.round(layout.profile_layer.x + size / 2),
-      y: Math.round(layout.profile_layer.y + size / 2)
-    },
-    name_layer: {
-      ...layout.name_layer,
-      y: Math.round(layout.name_layer.y + size2)
-    },
-  };
-}
+import { convertLayoutToCenter } from "../utils";
 
 
 const DEFAULT_LAYOUT = {
@@ -42,6 +24,7 @@ const DEFAULT_LAYOUT = {
     size: 160,
     shape: "circle",
     border: { enabled: false, color: "#FFFFFF", width: 4 },
+    is_placeholder: false,
   },
   name_layer: {
     x: 100,
@@ -51,6 +34,8 @@ const DEFAULT_LAYOUT = {
     color: "#FFFFFF",
     align: "center",
     font: "poppins_semi_bold",
+    is_placeholder: false,
+    background_color: '#00000000',
     shadow: {
       enabled: false,
       dx: 0,
@@ -72,7 +57,7 @@ const DEFAULT_LAYOUT = {
 /* =====================================================
    Layout V2 Editor (INLINE, COMPLETE, EDITABLE)
 ===================================================== */
-function LayoutV2Editor({
+export function LayoutV2Editor({
   value,
   onChange,
 }: {
@@ -152,6 +137,21 @@ function LayoutV2Editor({
             onChange={(e) =>
               update(
                 ["profile_layer", "border", "enabled"],
+                e.target.checked
+              )
+            }
+          />
+        </label>
+
+
+        <label>
+          Placeholder
+          <input
+            type="checkbox"
+            checked={value.profile_layer.is_placehodler}
+            onChange={(e) =>
+              update(
+                ["profile_layer", "is_placeholder"],
                 e.target.checked
               )
             }
@@ -299,6 +299,34 @@ function LayoutV2Editor({
           </select>
         </label>
 
+        <label>
+          Background Color
+          <input
+            type="color"
+            value={value.name_layer.background_color}
+            onChange={(e) =>
+              update(
+                ["name_layer", "background_color"],
+                e.target.value
+              )
+            }
+          />
+        </label>
+
+        <label>
+          Placeholder
+          <input
+            type="checkbox"
+            checked={value.name_layer.is_placeholder}
+            onChange={(e) =>
+              update(
+                ["name_layer", "is_placeholder"],
+                e.target.checked
+              )
+            }
+          />
+        </label>
+
         {/* ---------- Shadow ---------- */}
         <label>
           Shadow Enabled:
@@ -428,7 +456,7 @@ function LayoutV2Editor({
 }
 
 
-function AnimationEditor({
+export function AnimationEditor({
   title,
   value,
   onChange,
@@ -620,22 +648,7 @@ export function Uploader() {
 
   // ---------- V2 Layout State ----------
   const [layoutV2, setLayoutV2] = useState<any>(DEFAULT_LAYOUT);
-
   const previewUrl = file ? URL.createObjectURL(file) : "";
-  // useEffect(() => {
-  //   if (!previewUrl) return;
-
-  //   const img = new Image();
-  //   img.src = previewUrl;
-
-  //   img.onload = () => {
-  //     setLayoutV2((prev: any) => ({
-  //       ...prev,
-  //       design_width: img.naturalWidth,
-  //       design_height: img.naturalHeight,
-  //     }));
-  //   };
-  // }, [previewUrl]);
 
   useEffect(() => {
     if (!previewUrl) return;

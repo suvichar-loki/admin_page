@@ -9,6 +9,9 @@ const ADMIN_KEY = "my-secret-upload-key";
 const ADMIN_SECRET = "dummy-client-secret";
 // CLIENT_ID=dummy-client-id
 // CLIENT_SECRET=dummy-client-secret
+export interface FetchSingleImageResponse {
+  image: ApiImageRaw;
+}
 
 export function getAdminClientKey(): string {
   return ADMIN_KEY;
@@ -51,6 +54,27 @@ export type Category = {
     hi?: string;
   };
 };
+
+export async function fetchImageById(id: string): Promise<Image> {
+  const res = await apiJson<FetchSingleImageResponse>(
+    `/internal/images/${id}`,
+    { method: "GET" }
+  );
+
+  return mapImage(res.image);
+}
+
+export async function updateImageLayout(
+  id: string,
+  layout: object
+): Promise<void> {
+  await apiJson(`/internal/images/${id}/layout`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      layout,
+    }),
+  });
+}
 
 // ---- Helper for JSON requests ----
 async function apiJson<T>(
