@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 import {
   fetchImagesAdmin,
@@ -13,7 +13,7 @@ import {
 const PAGE_SIZE = 20;
 
 export function ImagesListPage() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [images, setImages] = useState<Image[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
@@ -161,9 +161,18 @@ export function ImagesListPage() {
                   onChange={() => toggleTrending(img)}
                 />
               </td>
-              <button onClick={() => navigate(`/images/${img.id}/edit`)}>
+              {/* <button onClick={() => navigate(`/images/${img.id}/edit`)}>
                 Edit
-              </button>
+              </button> */}
+
+              <a
+                href={`/images/${img.id}/edit`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn"
+              >
+                Edit
+              </a>
 
             </tr>
           ))}
