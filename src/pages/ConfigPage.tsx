@@ -6,35 +6,44 @@ import {
   addCategory,
   deleteCategory,
   updateLanguages,
+  fetchShuffleInfo,
+  reRankAllImages,
   type Category,
 } from "../api";
-import './config.css'
+import "./config.css";
 
 export function ConfigPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
+  const [lastShuffle, setLastShuffle] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [shuffling, setShuffling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [newCategoryEn, setNewCategoryEn] = useState("");
   const [newCategoryHi, setNewCategoryHi] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
 
+  // -----------------------------
+  // Initial Load
+  // -----------------------------
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const [cats, langs] = await Promise.all([
+        const [cats, langs, shuffleTime] = await Promise.all([
           fetchCategories(),
           fetchLanguages(),
+          fetchShuffleInfo(),
         ]);
 
         setCategories(cats);
         setLanguages(langs);
+        setLastShuffle(shuffleTime);
       } catch (err: any) {
         setError(err.message || "Failed to load config");
       } finally {
@@ -45,6 +54,9 @@ export function ConfigPage() {
     load();
   }, []);
 
+  // -----------------------------
+  // Category Actions
+  // -----------------------------
   const handleAddCategory = async () => {
     const en = newCategoryEn.trim();
     const hi = newCategoryHi.trim();
@@ -68,6 +80,7 @@ export function ConfigPage() {
 
   const handleDeleteCategory = async (key: string) => {
     if (!confirm(`Delete "${key}"?`)) return;
+
     try {
       setSaving(true);
       await deleteCategory(key);
@@ -77,6 +90,9 @@ export function ConfigPage() {
     }
   };
 
+  // -----------------------------
+  // Language Actions
+  // -----------------------------
   const handleAddLanguage = async () => {
     const val = newLanguage.trim();
     if (!val || languages.includes(val)) return;
@@ -92,6 +108,28 @@ export function ConfigPage() {
     }
   };
 
+  // -----------------------------
+  // Shuffle Images
+  // -----------------------------
+  const handleShuffleImages = async () => {
+    if (!confirm("Shuffle all images?")) return;
+
+    try {
+      setShuffling(true);
+      await reRankAllImages();
+
+      const updatedTime = await fetchShuffleInfo();
+      setLastShuffle(updatedTime);
+    } catch (err: any) {
+      alert(err.message || "Shuffle failed");
+    } finally {
+      setShuffling(false);
+    }
+  };
+
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <div className="config-page">
       {/* ---------- Header ---------- */}
@@ -167,6 +205,30 @@ export function ConfigPage() {
               {lang}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ---------- Image Shuffle ---------- */}
+      <section className="config-card">
+        <div className="card-header">
+          <h2>Image Ranking</h2>
+
+          <div className="card-actions">
+            <button
+              onClick={handleShuffleImages}
+              disabled={shuffling}
+              className="shuffle-btn"
+            >
+              {shuffling ? "Shuffling…" : "Shuffle Images"}
+            </button>
+
+            <span className="muted">
+              Last:{" "}
+              {lastShuffle
+                ? new Date(lastShuffle).toLocaleString()
+                : "Never"}
+            </span>
+          </div>
         </div>
       </section>
     </div>

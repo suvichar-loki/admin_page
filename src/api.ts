@@ -125,7 +125,9 @@ export interface ApiImageRaw {
   is_date: boolean;
   show_on_date?: string | null;
   created_at: string;
-  is_trending: boolean; // ✅ ADD THIS
+  is_trending: boolean;
+  weekly?: string | null;
+  rank?: number | null;
 }
 
 
@@ -145,7 +147,9 @@ export interface Image {
   showOnDate?: string | null;
   createdAt: string;
 
-  isTrending: boolean; // ✅ ADD THIS
+  isTrending: boolean;
+  weekly?: string | null;
+  rank?: number | null;
 }
 
 
@@ -167,7 +171,9 @@ export function mapImage(raw: ApiImageRaw): Image {
     showOnDate: raw.show_on_date ?? null,
     createdAt: raw.created_at,
 
-    isTrending: raw.is_trending, // ✅
+    isTrending: raw.is_trending,
+    weekly: raw.weekly ?? null,
+    rank: raw.rank ?? null,
   };
 }
 
@@ -278,6 +284,7 @@ export interface UploadImagePayload {
 
   isDate: boolean;
   showOnDate?: string | null;
+  weekly?: string | null;
 }
 
 export async function uploadImage(payload: UploadImagePayload): Promise<Image> {
@@ -292,6 +299,9 @@ export async function uploadImage(payload: UploadImagePayload): Promise<Image> {
 
   if (payload.version === "v1") {
     form.append("position", String(payload.position ?? 0));
+  }
+  if (payload.weekly) {
+    form.append("weekly", payload.weekly);
   }
 
   if (payload.version === "v2" && payload.layout) {
@@ -379,5 +389,25 @@ export async function updateTrending(
   await apiJson(`/internal/images/${id}/trending`, {
     method: "PATCH",
     body: JSON.stringify({ is_trending: isTrending }),
+  });
+}
+
+// ---- Shuffle APIs ----
+
+export interface ShuffleInfoResponse {
+  last_shuffled_at: string | null;
+}
+
+export async function fetchShuffleInfo(): Promise<string | null> {
+  const res = await apiJson<ShuffleInfoResponse>(
+    "/admin/config/images/shuffle-info",
+    { method: "GET" }
+  );
+  return res.last_shuffled_at;
+}
+
+export async function reRankAllImages(): Promise<void> {
+  await apiJson("/internal/images/re-rank-all", {
+    method: "POST",
   });
 }

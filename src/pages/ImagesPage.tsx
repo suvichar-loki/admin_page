@@ -54,6 +54,40 @@ const DEFAULT_LAYOUT = {
   video_duration: 5000,
 };
 
+function splitHexAlpha(hex: string) {
+  if (!hex) return { color: "#000000", alpha: 1 };
+
+  hex = hex.replace("#", "");
+
+  // Android format: AARRGGBB
+  if (hex.length === 8) {
+    const alphaHex = hex.slice(0, 2);
+    const colorHex = hex.slice(2);
+
+    const alpha = parseInt(alphaHex, 16) / 255;
+    return { color: `#${colorHex}`, alpha };
+  }
+
+  // If only RRGGBB
+  if (hex.length === 6) {
+    return { color: `#${hex}`, alpha: 1 };
+  }
+
+  return { color: "#000000", alpha: 1 };
+}
+
+function combineHexAlpha(color: string, alpha: number) {
+  const a = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, "0")
+    .toUpperCase();
+
+  const rgb = color.replace("#", "").toUpperCase();
+
+  // Android format
+  return `#${a}${rgb}`;
+}
+
 /* =====================================================
    Layout V2 Editor (INLINE, COMPLETE, EDITABLE)
 ===================================================== */
@@ -73,6 +107,8 @@ export function LayoutV2Editor({
     ref[path[path.length - 1]] = val;
     onChange(copy);
   };
+
+  const bg = splitHexAlpha(value.name_layer.background_color);
 
   return (
     <div className="layout-editor">
@@ -299,18 +335,38 @@ export function LayoutV2Editor({
           </select>
         </label>
 
+        
+
         <label>
-          Background Color
+          Background Color:
           <input
             type="color"
-            value={value.name_layer.background_color}
+            value={bg.color}
             onChange={(e) =>
               update(
                 ["name_layer", "background_color"],
-                e.target.value
+                combineHexAlpha(e.target.value, bg.alpha)
               )
             }
           />
+        </label>
+
+        <label>
+          Opacity:
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={bg.alpha}
+            onChange={(e) =>
+              update(
+                ["name_layer", "background_color"],
+                combineHexAlpha(bg.color, parseFloat(e.target.value))
+              )
+            }
+          />
+          {(bg.alpha * 100).toFixed(0)}%
         </label>
 
         <label>
@@ -634,6 +690,7 @@ export function Uploader() {
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
   const [file, setFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [weekly, setWeekly] = useState<string>("");
 
 
 
@@ -741,6 +798,7 @@ export function Uploader() {
         layout: layoutForPost,
         isDate,
         showOnDate: isDate ? showOnDate : null,
+        weekly: weekly || null,
       });
 
       // setFile(null);
@@ -789,6 +847,23 @@ export function Uploader() {
               {languages.map((l) => (
                 <option key={l}>{l}</option>
               ))}
+            </select>
+          </label>
+
+          <label>
+            Weekly:
+            <select
+              value={weekly}
+              onChange={(e) => setWeekly(e.target.value)}
+            >
+              <option value="">Everyday</option>
+              <option value="monday">Monday</option>
+              <option value="tuesday">Tuesday</option>
+              <option value="wednesday">Wednesday</option>
+              <option value="thursday">Thursday</option>
+              <option value="friday">Friday</option>
+              <option value="saturday">Saturday</option>
+              <option value="sunday">Sunday</option>
             </select>
           </label>
 
