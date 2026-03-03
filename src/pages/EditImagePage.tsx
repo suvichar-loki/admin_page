@@ -111,7 +111,9 @@ export function EditImagePage() {
   if (error) return <p>Error: {error}</p>;
   if (!media || !layout) return <p>Media not found</p>;
 
-  const mediaUrl = media.imageUrl || media.videoUrl || "";
+  const mediaUrl = media.mediaType === "video"
+    ? media.videoUrl || ""
+    : media.imageUrl || "";
   const isVideo = media?.mediaType === "video";
 
   /* -------------------------------------------------

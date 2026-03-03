@@ -77,7 +77,11 @@ export function LayoutV2CanvasEditor({
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isVideo || !videoContainerRef.current || videoRef.current) return;
+    if (!isVideo || !videoContainerRef.current) return;
+
+    // 🧹 Clear previous video if exists
+    videoContainerRef.current.innerHTML = "";
+    videoRef.current = null;
 
     const video = document.createElement("video");
     video.src = imageUrl;
@@ -92,15 +96,18 @@ export function LayoutV2CanvasEditor({
     video.style.height = "100%";
     video.style.objectFit = "contain";
     video.style.background = "#111";
-
-    // 🔑 THESE TWO LINES FIX EVERYTHING
     video.style.zIndex = "0";
     video.style.pointerEvents = "none";
 
     videoRef.current = video;
     videoContainerRef.current.appendChild(video);
-  }, [isVideo, imageUrl]);
 
+    return () => {
+      video.pause();
+      video.src = "";
+      videoContainerRef.current?.removeChild(video);
+    };
+  }, [isVideo, imageUrl]);
 
 
 
