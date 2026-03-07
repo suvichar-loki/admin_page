@@ -11,8 +11,6 @@ import {
   type Image,
   type Category,
 } from "../api";
-import { positionLabel } from "../position";
-import { PositionGuide } from "../components/PositionGuide";
 import { LayoutV2CanvasEditor } from "../components/LayoutV2CanvasEditor";
 import { convertLayoutToCenter } from "../utils";
 
@@ -705,7 +703,19 @@ export function Uploader() {
 
   // ---------- V2 Layout State ----------
   const [layoutV2, setLayoutV2] = useState<any>(DEFAULT_LAYOUT);
-  const previewUrl = file ? URL.createObjectURL(file) : "";
+  // const previewUrl = file ? URL.createObjectURL(file) : "";
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
 
   useEffect(() => {
     if (!previewUrl) return;

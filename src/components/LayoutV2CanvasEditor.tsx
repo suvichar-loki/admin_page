@@ -79,25 +79,24 @@ export function LayoutV2CanvasEditor({
   useEffect(() => {
     if (!isVideo || !videoContainerRef.current) return;
 
-    // 🧹 Clear previous video if exists
     videoContainerRef.current.innerHTML = "";
-    videoRef.current = null;
 
     const video = document.createElement("video");
     video.src = imageUrl;
     video.muted = true;
     video.loop = true;
     video.playsInline = true;
-    video.preload = "auto";
+    video.preload = "metadata";
 
     video.style.position = "absolute";
     video.style.inset = "0";
     video.style.width = "100%";
     video.style.height = "100%";
     video.style.objectFit = "contain";
-    video.style.background = "#111";
-    video.style.zIndex = "0";
-    video.style.pointerEvents = "none";
+
+    video.onloadedmetadata = () => {
+      video.play().catch(() => {});
+    };
 
     videoRef.current = video;
     videoContainerRef.current.appendChild(video);
@@ -105,10 +104,8 @@ export function LayoutV2CanvasEditor({
     return () => {
       video.pause();
       video.src = "";
-      videoContainerRef.current?.removeChild(video);
     };
   }, [isVideo, imageUrl]);
-
 
 
   // const isVideo = /\.(mp4|webm|ogg)$/i.test(imageUrl);
