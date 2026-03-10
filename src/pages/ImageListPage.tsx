@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
 
 import {
-  fetchImagesAdmin,
+  searchImagesAdmin,
   updateTrending,
   fetchCategories,
   fetchLanguages,
@@ -13,7 +12,6 @@ import {
 const PAGE_SIZE = 20;
 
 export function ImagesListPage() {
-  // const navigate = useNavigate();
   const [images, setImages] = useState<Image[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
@@ -25,6 +23,9 @@ export function ImagesListPage() {
   const [category, setCategory] = useState<string>("");
   const [language, setLanguage] = useState<string>("");
 
+  const [nameBgColor, setNameBgColor] = useState<string>("");
+  const [profilePlaceholder, setProfilePlaceholder] = useState<string>("");
+
   // -------------------------
   // Load categories + languages
   // -------------------------
@@ -35,12 +36,14 @@ export function ImagesListPage() {
           fetchCategories(),
           fetchLanguages(),
         ]);
+
         setCategories(cats);
         setLanguages(langs);
       } catch (e) {
         console.error(e);
       }
     };
+
     loadFilters();
   }, []);
 
@@ -49,17 +52,28 @@ export function ImagesListPage() {
   // -------------------------
   async function loadImages(newOffset: number) {
     setLoading(true);
+
     try {
-      const res = await fetchImagesAdmin({
+      const res = await searchImagesAdmin({
         category: category || undefined,
         language: language || undefined,
+        nameBgColor: nameBgColor || undefined,
+        profilePlaceholder:
+          profilePlaceholder === ""
+            ? undefined
+            : profilePlaceholder === "true",
         limit: PAGE_SIZE,
         offset: newOffset,
       });
 
       setImages(res.images);
-      setNextOffset(res.next);
       setOffset(newOffset);
+
+      if (res.images.length < PAGE_SIZE) {
+        setNextOffset(-1);
+      } else {
+        setNextOffset(newOffset + PAGE_SIZE);
+      }
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -81,7 +95,7 @@ export function ImagesListPage() {
   }
 
   function applyFilters() {
-    loadImages(0); // reset pagination
+    loadImages(0);
   }
 
   // -------------------------
@@ -92,11 +106,16 @@ export function ImagesListPage() {
       <h1>Images</h1>
 
       {/* Filters */}
-      <div style={{ marginBottom: 16, display: "flex", gap: 12 }}>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        {/* Category */}
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">All Categories</option>
           {categories.map((c) => (
             <option key={c.key} value={c.key}>
@@ -105,16 +124,32 @@ export function ImagesListPage() {
           ))}
         </select>
 
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-        >
+        {/* Language */}
+        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
           <option value="">All Languages</option>
           {languages.map((l) => (
             <option key={l} value={l}>
               {l}
             </option>
           ))}
+        </select>
+
+        {/* Name BG Color */}
+        <input
+          type="text"
+          placeholder="Name BG Color (#ffcc00)"
+          value={nameBgColor}
+          onChange={(e) => setNameBgColor(e.target.value)}
+        />
+
+        {/* Profile Placeholder */}
+        <select
+          value={profilePlaceholder}
+          onChange={(e) => setProfilePlaceholder(e.target.value)}
+        >
+          <option value="">Profile Placeholder</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
         </select>
 
         <button onClick={applyFilters} disabled={loading}>
@@ -138,6 +173,7 @@ export function ImagesListPage() {
             <th>Edit</th>
           </tr>
         </thead>
+
         <tbody>
           {images.map((img) => (
             <tr key={img.id}>
@@ -148,11 +184,14 @@ export function ImagesListPage() {
                   <img src={img.imageUrl} width={80} />
                 )}
               </td>
+
               <td>{img.category}</td>
               <td>{img.language}</td>
               <td>{img.mediaType}</td>
               <td>{img.version}</td>
+
               <td>{new Date(img.createdAt).toLocaleString()}</td>
+
               <td>
                 <input
                   type="checkbox"
@@ -161,19 +200,17 @@ export function ImagesListPage() {
                   onChange={() => toggleTrending(img)}
                 />
               </td>
-              {/* <button onClick={() => navigate(`/images/${img.id}/edit`)}>
-                Edit
-              </button> */}
 
-              <a
-                href={`/images/${img.id}/edit`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn"
-              >
-                Edit
-              </a>
-
+              <td>
+                <a
+                  href={`/images/${img.id}/edit`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn"
+                >
+                  Edit
+                </a>
+              </td>
             </tr>
           ))}
         </tbody>

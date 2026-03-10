@@ -411,3 +411,45 @@ export async function reRankAllImages(): Promise<void> {
     method: "POST",
   });
 }
+
+
+export interface ImageSearchParams {
+  category?: string;
+  language?: string;
+  nameBgColor?: string;
+  profilePlaceholder?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export async function searchImagesAdmin(
+  params: ImageSearchParams
+): Promise<{ images: Image[]; count: number }> {
+
+  const query = new URLSearchParams();
+
+  if (params.category) query.set("category", params.category);
+  if (params.language) query.set("language", params.language);
+  if (params.nameBgColor) query.set("name_bg_color", params.nameBgColor);
+
+  if (params.profilePlaceholder !== undefined) {
+    query.set("profile_placeholder", String(params.profilePlaceholder));
+  }
+
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.offset !== undefined) query.set("offset", String(params.offset));
+
+  const suffix = query.toString() ? `?${query}` : "";
+
+  const res = await apiJson<{
+    message: ApiImageRaw[];
+    count: number;
+  }>(`/internal/images/search${suffix}`, {
+    method: "GET",
+  });
+
+  return {
+    images: res.message.map(mapImage),
+    count: res.count,
+  };
+}
